@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\RouterosAPI;
 use Illuminate\Http\Request;
+use App\Models\Voucher;
+use App\Models\Agent;
 
 class MikrotikController extends Controller
 {
@@ -47,58 +49,103 @@ class MikrotikController extends Controller
         }
     }
 
-    
+
 
     public function createVoucher()
-{
-    if (!session('ip')) {
-        return redirect()->route('login');
-    }
-
-    $api = new RouterosAPI();
-    $api->debug = false;
-
-    // $routerName = 'Unknown Router'; // Default value
-
-    if ($api->connect(session('ip'), session('username'), session('password'))) {
-        $identity = $api->comm('/system/identity/print');
-        if (!empty($identity[0]['name'])) {
-            $routerName = $identity[0]['name'];
+    {
+        // Check if IP session exists, otherwise redirect to login
+        if (!session('ip')) {
+            return redirect()->route('login');
         }
-        $api->disconnect();
+
+        $api = new RouterosAPI();
+        $api->debug = false;
+
+        if ($api->connect(session('ip'), session('username'), session('password'))) {
+            $identity = $api->comm('/system/identity/print');
+            if (!empty($identity[0]['name'])) {
+                $routerName = $identity[0]['name'];
+            }
+            $api->disconnect();
+        }
+
+        // Store routerName in the session
+        session()->put('routerName', $routerName);
+
+        // Debug session data
+        // dd(session('routerName')); 
+
+        return view('create-voucher', compact('routerName'));
     }
 
-    // Store the router name in the session
-    session(['routerName' => $routerName]);
-    dd($routerName, 'jkniqnweiouihqwbneoqwe ');
 
-    return view('create-voucher', compact('routerName'));
-}
+    public function voucherList()
+    {
+        // Check if IP session exists, otherwise redirect to login
+        if (!session('ip')) {
+            return redirect()->route('login');
+        }
 
+        $api = new RouterosAPI();
+        $api->debug = false;
 
+        // Retrieve the routerName from session
+        $routerName = session('routerName');
 
-public function voucherList()
-{
-    
-    if (!session('ip')) {
-        return redirect()->route('login');
+        if ($api->connect(session('ip'), session('username'), session('password'))) {
+            $vouchers = $api->comm('/ip/hotspot/user/print');
+            $api->disconnect();
+
+            // Initialize categories for 'default' and 'other than default'
+            $categories = [
+                'default' => [],
+                'other than default' => []
+            ];
+
+            // Initialize subcategories for limit-uptime ranges
+            $timeCategories = [
+                '1 hour' => [],
+                '2 hours' => [],
+                '3 hours' => [],
+                '5 hours' => [],
+                '8 hours' => [],
+                '12 hours' => [],
+                '24 hours' => []
+            ];
+
+            // Classify vouchers by profile and then by limit-uptime
+            foreach ($vouchers as $voucher) {
+                // Classify by profile
+                $profile = $voucher['profile'] ?? 'other than default';
+                $categories[$profile][] = $voucher;
+
+                // Classify by limit-uptime range
+                $limitUptime = $voucher['limit-uptime'] ?? '0';
+                $hours = (int) filter_var($limitUptime, FILTER_SANITIZE_NUMBER_INT);
+
+                if ($hours < 2) {
+                    $timeCategories['1 hour'][] = $voucher;
+                } elseif ($hours >= 2 && $hours < 3) {
+                    $timeCategories['2 hours'][] = $voucher;
+                } elseif ($hours >= 3 && $hours < 5) {
+                    $timeCategories['3 hours'][] = $voucher;
+                } elseif ($hours >= 5 && $hours < 8) {
+                    $timeCategories['5 hours'][] = $voucher;
+                } elseif ($hours >= 8 && $hours < 12) {
+                    $timeCategories['8 hours'][] = $voucher;
+                } elseif ($hours >= 12 && $hours < 24) {
+                    $timeCategories['12 hours'][] = $voucher;
+                } elseif ($hours >= 24) {
+                    $timeCategories['24 hours'][] = $voucher;
+                }
+            }
+
+            return view('voucher-list', compact('categories', 'timeCategories', 'routerName'));
+        }
+
+        // In case of failure to connect
+        return redirect()->route('login')->withErrors(['error' => 'Failed to retrieve vouchers.']);
     }
-    $routerName = session('routerName');
-    // dd(session('routerName'));
-
-
-    $api = new RouterosAPI();
-    $api->debug = false;
-
-    if ($api->connect(session('ip'), session('username'), session('password'))) {
-        $vouchers = $api->comm('/ip/hotspot/user/print');
-        $api->disconnect();
-
-        return view('voucher-list', compact('vouchers', 'routerName'));
-    }
-
-    return redirect()->route('login')->withErrors(['error' => 'Failed to retrieve vouchers.']);
-}
 
 
     public function logout()
@@ -109,4 +156,61 @@ public function voucherList()
         // Redirect to the login page
         return redirect()->route('login');
     }
+
+    public function sellVoucher(Request $request)
+{
+    $validated = $request->validate([
+        'profile' => 'required|string',
+        'subcategory' => 'required|string',
+        'quantity' => 'required|integer|min:1',
+    ]);
+
+    $profile = $validated['profile'];
+    $subcategory = $validated['subcategory'];
+    $quantity = $validated['quantity'];
+
+    $api = new RouterosAPI();
+    $api->debug = false;
+
+    if (!$api->connect(session('ip'), session('username'), session('password'))) {
+        return response()->json(['message' => 'Failed to connect to MikroTik router.'], 500);
+    }
+
+    // Fetch vouchers from MikroTik for the given profile and subcategory
+    $vouchers = $api->comm('/ip/hotspot/user/print', [
+        '?profile' => $profile,
+        '?limit-uptime' => $subcategory, // Assuming subcategory maps to limit-uptime
+    ]);
+
+    $soldVouchers = [];
+
+    // Mark the required quantity of vouchers as sold
+    for ($i = 0; $i < $quantity && $i < count($vouchers); $i++) {
+        $voucher = $vouchers[$i];
+
+        // Update the voucher status in MikroTik
+        $api->comm('/ip/hotspot/user/set', [
+            '.id' => $voucher['.id'],
+            'disabled' => 'true', // Mark as sold by disabling
+        ]);
+
+        // Save the voucher details to the database
+        $soldVoucher = Voucher::create([
+            'username' => $voucher['name'],
+            'password' => $voucher['password'],
+            'profile' => $profile,
+            'subcategory' => $subcategory,
+        ]);
+
+        $soldVouchers[] = $soldVoucher;
+    }
+
+    $api->disconnect();
+
+    // Render the updated stored voucher container
+    $storedVouchers = Voucher::all();
+    $html = view('partials.stored-vouchers', compact('storedVouchers'))->render();
+
+    return response()->json(['html' => $html]);
+}
 }

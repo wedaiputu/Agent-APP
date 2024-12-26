@@ -14,4 +14,5 @@ Route::middleware(['web'])->group(function () {
     Route::get('/logout', [MikrotikController::class, 'logout'])->name('logout');
     Route::get('/voucher-list', [MikrotikController::class, 'voucherList'])->name('voucher.list');
     Route::get('/create-voucher', [MikrotikController::class, 'createVoucher'])->name('create.voucher');
+    Route::post('/sell-voucher', [MikrotikController::class, 'sellVoucher'])->name('sell.voucher');
 });

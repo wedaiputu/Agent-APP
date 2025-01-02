@@ -12,15 +12,16 @@ return new class extends Migration
     public function up()
     {
         Schema::create('vouchers', function (Blueprint $table) {
-            $table->id();
-            $table->integer('quantity')->default(1);
-            $table->string('username');
-            $table->string('password');
-            $table->integer('price');
-            $table->integer('uptime_limit');
-            $table->string('barcode');
-            $table->unsignedBigInteger('agent_id');  // Foreign key to agents
-            $table->timestamps();
+            $table->id(); // Primary key
+            $table->string('username')->unique(); // Unique username for the voucher
+            $table->string('password'); // Password for the voucher
+            $table->string('status')->default('inactive'); // Status: active/inactive
+            $table->string('limit_uptime')->nullable(); // Uptime limit, e.g., '1d'
+            $table->integer('price')->default(0); // Price of the voucher
+            $table->string('profile')->nullable(); // Optional: bandwidth or package type
+            $table->string('comment')->nullable(); // Notes or additional metadata
+            $table->unsignedBigInteger('agent_id'); // Foreign key linking to agents
+            $table->timestamps(); // Created and updated timestamps
 
             // Add foreign key constraint
             $table->foreign('agent_id')->references('id')->on('agents')->onDelete('cascade');

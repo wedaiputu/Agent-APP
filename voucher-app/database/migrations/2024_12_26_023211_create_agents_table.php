@@ -12,9 +12,13 @@ return new class extends Migration
     public function up()
     {
         Schema::create('agents', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');  // Add the agent's name
-            $table->timestamps();
+            $table->id(); // Primary key
+            $table->string('name'); // Agent name
+            $table->string('email')->unique(); // Unique email for login
+            $table->string('phone')->nullable(); // Optional phone number
+            $table->string('address')->nullable(); // Optional address
+            $table->string('password'); // Password for authentication
+            $table->timestamps(); // Created and updated timestamps
         });
     }
 

@@ -7,15 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class Voucher extends Model
 {
-    /** @use HasFactory<\Database\Factories\VoucherFactory> */
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     */
     protected $fillable = [
         'username',
         'password',
-        'TimeOut',
-        'Price',
-        'Barcode',
-        'ResellerName'
+        'status',
+        'limit_uptime',
+        'price',
+        'profile',
+        'comment',
+        'agent_id',
     ];
+
+    /**
+     * Get the agent that owns the voucher.
+     */
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
+    }
 }

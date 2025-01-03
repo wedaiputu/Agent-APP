@@ -8,23 +8,25 @@ use App\Http\Controllers\Mikrotik\MikrotikController;
 use Illuminate\Support\Facades\Auth;
 
 
-Route::middleware(['web'])->group(function () {
-    Route::get('mikrotiklogin', [MikrotikController::class, 'index'])->name('mikrotik.mikrotiklogin');
 
-    Route::post('mikrotiklogin', [MikrotikController::class, 'mikrotikLogin'])->name('mikrotik.mikrotiklogin');
-});
 Route::prefix('agent')->group(function () {
     // Login Routes
     Route::get('login', [AgentLoginController::class, 'showLoginForm'])->name('agent.login');
     Route::post('login', [AgentLoginController::class, 'login'])->name('agent.login.submit');
-    
+
     // Add logout route
     Route::post('logout', [AgentLoginController::class, 'logout'])->name('agent.logout');
 
     // Protected routes
     Route::middleware(['auth:agent'])->get('/dashboard', [DashboardController::class, 'index'])->name('agent.dashboard');
-    Route::get('/voucher-list', [MikrotikController::class, 'voucherList'])->name('voucher.list');    
-Route::post('/update-voucher', [MikrotikController::class, 'updateVoucherComment'])->name('voucher.update');
+    Route::middleware(['web'])->group(function () {
+        Route::get('/voucher-list', [MikrotikController::class, 'voucherList'])->name('voucher.list');
+        Route::post('voucher-create', [MikrotikController::class, 'createVoucher'])->name('voucher.create');
+        Route::post('/update-voucher', [MikrotikController::class, 'updateVoucherComment'])->name('voucher.update');
+        Route::get('mikrotiklogin', [MikrotikController::class, 'index'])->name('mikrotik.mikrotiklogin');
+
+        Route::post('mikrotiklogin', [MikrotikController::class, 'mikrotikLogin'])->name('mikrotik.mikrotiklogin');
+    });
 });
 
 // Route::get('/logout', [MikrotikController::class, 'logout'])->name('logout');

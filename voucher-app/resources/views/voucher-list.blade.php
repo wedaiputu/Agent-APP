@@ -2,14 +2,17 @@
 
 @section('content')
 <div class="container">
-    <h1>Nama Router: {{ $routerName }}</h1>
+    <!-- Display Agent Details -->
+    <h1 class="text-2xl font-bold">Agent: {{ $agentName }} (ID: {{ $agentId }})</h1>
+    <h2 class="text-lg font-semibold text-gray-600">Nama Router: {{ $routerName }}</h2>
 
     <!-- Card Layout for Voucher Counts -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
         <!-- Agent Voucher Card -->
-        @php
-@endphp
-
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800">Agent Vouchers</h2>
+            <p class="text-2xl font-bold text-gray-600">{{ $totalAgentVouchers }}</p>
+        </div>
 
         <!-- Non-Agent Card -->
         <div class="bg-white rounded-lg shadow-md p-6">

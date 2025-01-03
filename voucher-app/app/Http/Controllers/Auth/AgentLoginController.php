@@ -22,26 +22,30 @@ class AgentLoginController extends Controller
      * Handle the login request.
      */
     public function login(Request $request)
-{
-    // $agent = Agent::find(1);  // Or any other query
-
-    // dd($agent);
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|min:3',
-    ]);
-
-    // dd(Auth::guard('agent')->check()); 
-
-    // Attempt to log the agent in
-    if (Auth::guard('agent')->attempt($request->only('email', 'password'))) {
-        return redirect()->intended(route('agent.dashboard'));
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:3',
+        ]);
+    
+        // Attempt to log the agent in
+        if (Auth::guard('agent')->attempt($request->only('email', 'password'))) {
+            // Retrieve the authenticated agent
+            $agent = Auth::guard('agent')->user();
+    
+            // Store agent-related information in the session
+            session([
+                'agent_id' => $agent->id,            // Save agent ID in session
+                'agent_name' => $agent->name,        // Optional: Save agent name
+                'routerName' => $agent->router_name, // Optional: Save router name if available in database
+            ]);
+    
+            return redirect()->route('agent.dashboard');
+        }
+    
+        return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
     }
-
-    return back()->withErrors([
-        'email' => 'Invalid credentials.',
-    ])->withInput();
-}
+    
 
 
     /**

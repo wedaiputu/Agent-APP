@@ -152,6 +152,7 @@ class MikrotikController extends Controller
             return isset($voucher['profile']) && $voucher['profile'] !== 'default';
         });
 
+
         // Count the vouchers in each category
         $totalAgentVouchers = count($agentVouchers);
         $totalNonAgentVouchers = count($nonAgentVouchers);

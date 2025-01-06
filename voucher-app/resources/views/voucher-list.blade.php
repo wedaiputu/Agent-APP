@@ -24,8 +24,8 @@
 
 
         <!-- Default Profile Card -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-800">Default Profile</h2>
+        <div class="bg-white rounded-lg shadow-md p-6" id="DefaultVoucherDiv">
+            <h2 class="text-xl font-semibold text-gray-800" >Default Profile</h2>
             <p class="text-2xl font-bold text-gray-600">{{ $totalDefaultProfileVouchers }}</p>
         </div>
 
@@ -50,12 +50,54 @@
             </thead>
             <tbody>
                 @foreach($nonAgentVouchers as $voucher)
+                
                     <tr>
                         <td class="py-2 px-4 border-b border-gray-200">{{ $voucher['name'] }}</td>
                         <td class="py-2 px-4 border-b border-gray-200">{{ $voucher['status'] }}</td>
                         <td class="py-2 px-4 border-b border-gray-200">
                             {{ $voucher['limit-uptime'] ?? 'N/A' }}
                         </td>
+                        {{-- <td class="py-2 px-4 border-b border-gray-200">{{ $voucher['profile'] }}</td> --}}
+                        <td class="py-2 px-4 border-b border-gray-200">
+                            <button>
+
+                                <form action="{{ route('voucher.update') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="voucherId" value="{{ $voucher['.id'] }}">
+                                    <input type="hidden" name="comment" value="agent">
+                                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Get Voucher</button>
+                                </form>                            
+                            </button>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Hidden section to display Default Profile vouchers -->
+    <div id="DefaultVoucherList" class="hidden mt-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Default Profile Vouchers</h3>
+        <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-800">Name</th>
+                    <th class="py-2 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-800">Status</th>
+                    <th class="py-2 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-800">Limit Uptime</th>
+                    <th class="py-2 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-800">Profile</th>
+                    <th class="py-2 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-800">Action</th>
+                </tr>
+                
+            </thead>
+            <tbody>
+                @foreach($defaultProfileVouchers as $voucher)
+                    <tr>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ $voucher['name'] }}</td>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ $voucher['status'] }}</td>
+                        <td class="py-2 px-4 border-b border-gray-200">
+                            {{ $voucher['limit-uptime'] ?? 'N/A' }}
+                        </td>
+                        <td class="py-2 px-4 border-b border-gray-200">{{ $voucher['profile'] }}</td>
                         <td class="py-2 px-4 border-b border-gray-200">
                             <button>
 
@@ -113,6 +155,14 @@
 <script>
     document.getElementById('nonAgentVoucherDiv').addEventListener('click', function() {
         var voucherList = document.getElementById('nonAgentVoucherList');
+        // Toggle visibility
+        voucherList.classList.toggle('hidden');
+    });
+</script>
+
+<script>
+    document.getElementById('DefaultVoucherDiv').addEventListener('click', function() {
+        var voucherList = document.getElementById('DefaultVoucherList');
         // Toggle visibility
         voucherList.classList.toggle('hidden');
     });

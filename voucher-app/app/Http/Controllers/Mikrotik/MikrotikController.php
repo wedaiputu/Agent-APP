@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RouterosAPI;
 use App\Models\Voucher;
+use PhpParser\Node\Stmt\Return_;
 
 class MikrotikController extends Controller
 {
@@ -201,8 +202,9 @@ class MikrotikController extends Controller
                 'comment' => $newComment,  // New comment value
             ]);
             $api->disconnect();
-
-            return response()->json(['message' => 'Voucher comment updated successfully']);
+            
+            
+            return back()->with('success', 'Voucher comment updated successfully');
         }
 
         return response()->json(['error' => 'Failed to connect to MikroTik'], 500);
